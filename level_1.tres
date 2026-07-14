@@ -4,4 +4,12 @@
 
 [resource]
 script = ExtResource("1_kngh3")
+width = 6
+height = 6
+admin_start_pos = Vector2i(0, 5)
+zombie_start_positions = [Vector2i(5, 4), Vector2i(2, 2)]
+wall_positions = [Vector2i(2, 1), Vector2i(3, 1), Vector2i(4, 1), Vector2i(2, 4), Vector2i(3, 4)]
+gc_tile_positions = [Vector2i(0, 1), Vector2i(5, 3)]
+emp_start_positions = [Vector2i(0, 2), Vector2i(5, 5)]
+exit_position = Vector2i(5, 0)
 metadata/_custom_type_script = "uid://c12jlfixkd3jy"
