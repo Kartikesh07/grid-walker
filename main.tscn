@@ -1,8 +1,10 @@
 [gd_scene format=3 uid="uid://c5tost7vh0868"]
 
+[ext_resource type="Script" uid="uid://co6yg6r6235f6" path="res://src/game_manager.gd" id="1_0xm2m"]
 [ext_resource type="Script" uid="uid://tpeghwfnimhw" path="res://src/scenes/level_view.gd" id="1_ig7tw"]
 
 [node name="Main" type="Node2D" unique_id=1907273590]
+script = ExtResource("1_0xm2m")
 
 [node name="LevelView" type="Node2D" parent="." unique_id=1311594979]
 script = ExtResource("1_ig7tw")
