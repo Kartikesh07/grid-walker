@@ -1,0 +1,95 @@
+[gd_scene format=3 uid="uid://dmq4re613xff5"]
+
+[ext_resource type="Script" uid="uid://dpn7gwdj4hwis" path="res://src/scenes/title_menu.gd" id="1_cgpkj"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_w37us"]
+bg_color = Color(0.023529412, 0.09411765, 0.011764706, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.22352941, 1, 0.078431375, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mgd1j"]
+bg_color = Color(0.22352941, 1, 0.078431375, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.22352941, 1, 0.078431375, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_f2vs7"]
+bg_color = Color(0.101960786, 0.019607844, 0.019607844, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.19215687, 0.19215687, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_y7hm8"]
+bg_color = Color(1, 0.19215687, 0.19215687, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.19215687, 0.19215687, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="TitleMenu" type="Control" unique_id=16565927]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_cgpkj")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1055975098]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -120.0
+offset_top = -60.0
+offset_right = 120.0
+offset_bottom = 60.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="StartButton" type="Button" parent="VBoxContainer" unique_id=879668446]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 50)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.22352941, 1, 0.078431375, 1)
+theme_override_colors/font_hover_color = Color(0.039215688, 0.039215688, 0.08627451, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_w37us")
+theme_override_styles/hover = SubResource("StyleBoxFlat_mgd1j")
+text = "INITIALIZE WALK"
+
+[node name="ExitButton" type="Button" parent="VBoxContainer" unique_id=1863225706]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 50)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.19215687, 0.19215687, 1)
+theme_override_colors/font_hover_color = Color(0.039215688, 0.039215688, 0.08627451, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_f2vs7")
+theme_override_styles/hover = SubResource("StyleBoxFlat_y7hm8")
+text = "DISCONNECT"
