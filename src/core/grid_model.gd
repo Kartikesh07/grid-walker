@@ -58,7 +58,7 @@ func move(direction: Vector2i) -> Dictionary:
 	sorted_zombies.sort_custom(func(a: Vector2i, b: Vector2i):
 		var score_a = a.x * z_move.x + a.y * z_move.y
 		var score_b = b.x * z_move.x + b.y * z_move.y
-		return score_a > score_b # Descending order (furthest along movement direction first)
+		return score_a > score_b # Descending order
 	)
 	
 	var remaining = sorted_zombies.duplicate()
@@ -67,11 +67,6 @@ func move(direction: Vector2i) -> Dictionary:
 		remaining.erase(z)
 		var proposed_z_pos = z - direction # Mirrored
 		
-		# Check if the destination is free from:
-		# - Grid boundary limits
-		# - Static firewalls
-		# - Already moved zombies in this turn
-		# - Stationary zombies that have not moved yet
 		var can_move = (
 			is_in_bounds(proposed_z_pos) and
 			not proposed_z_pos in wall_positions and
@@ -85,6 +80,16 @@ func move(direction: Vector2i) -> Dictionary:
 			new_zombies.append(z) # Stay in place if blocked
 			
 	zombie_positions = new_zombies
+	
+	# 3. Check for Garbage Collection Deletions
+	var surviving_zombies: Array = []
+	for z_pos in zombie_positions:
+		if z_pos in gc_positions:
+			print("Zombie deleted at GC tile: ", z_pos)
+		else:
+			surviving_zombies.append(z_pos)
+	zombie_positions = surviving_zombies
+	
 	report["zombies_new"] = zombie_positions.duplicate()
 	
 	return report
