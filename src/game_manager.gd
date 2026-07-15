@@ -32,6 +32,7 @@ func _ready() -> void:
 	# Connect HUD action requests
 	hud.restart_requested.connect(_on_hud_restart)
 	hud.undo_requested.connect(_on_hud_undo)
+	hud.redo_requested.connect(_on_hud_redo)
 	
 	# Initialize HUD button states
 	_update_hud_states()
@@ -103,6 +104,9 @@ func _on_hud_restart() -> void:
 
 func _on_hud_undo() -> void:
 	_on_undo_requested()
+
+func _on_hud_redo() -> void:
+	_on_redo_requested()
 
 func _restart_level() -> void:
 	# Reset history and reload level model and view layouts
