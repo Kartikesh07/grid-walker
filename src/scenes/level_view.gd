@@ -36,7 +36,7 @@ var admin_sprite: ColorRect = null
 var exit_sprite: ColorRect = null
 var wall_nodes: Array[ColorRect] = []
 var gc_nodes: Array[ColorRect] = []
-var zombie_nodes: Array[ColorRect] = [] # Maps list of active zombie nodes (changed from Dictionary to prevent leaks)
+var zombie_nodes: Array[ColorRect] = []
 var emp_nodes: Dictionary = {} # Maps logical Vector2i -> ColorRect
 
 func setup(model: GridModel) -> void:
@@ -69,7 +69,6 @@ func setup(model: GridModel) -> void:
 	
 	# 4. Create Admin Node visual
 	admin_sprite = create_tile_rect(model.admin_pos, COLOR_ADMIN, Color.WHITE, 2.0)
-	# Add a glowing accent center to Admin
 	var admin_inner = ColorRect.new()
 	admin_inner.color = Color("051a02")
 	admin_inner.size = Vector2(TILE_SIZE * 0.4, TILE_SIZE * 0.4)
@@ -83,7 +82,8 @@ func setup(model: GridModel) -> void:
 		
 	# 5. Create Zombie Nodes visuals
 	for z_pos in model.zombie_positions:
-		create_zombie_visual(z_pos)
+		var rect = create_zombie_visual(z_pos)
+		zombie_nodes.append(rect)
 
 func clear_visuals() -> void:
 	if admin_sprite:
@@ -106,30 +106,71 @@ func clear_visuals() -> void:
 	emp_nodes.clear()
 
 func snap_to_state(model: GridModel) -> void:
-	# Instantly snap the Player node
+	# 1. Slide the Player node smoothly
 	if admin_sprite:
-		admin_sprite.position = grid_to_pixel(model.admin_pos)
+		var target_pos = grid_to_pixel(model.admin_pos)
+		var player_tween = create_tween()
+		player_tween.tween_property(admin_sprite, "position", target_pos, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		
 	# Sync Exit Portal state visually
 	update_exit_portal(model.exit_unlocked)
 			
-	# Re-sync Zombie nodes (they could have moved)
-	for node in zombie_nodes:
-		node.queue_free()
-	zombie_nodes.clear()
+	# 2. Slide Zombie nodes smoothly matching target positions
+	var unused_zombies = zombie_nodes.duplicate()
+	var new_zombie_nodes: Array[ColorRect] = []
+	
+	var zombie_tween = create_tween()
+	zombie_tween.set_parallel(true)
+	
 	for z_pos in model.zombie_positions:
-		create_zombie_visual(z_pos)
+		var target_pixel = grid_to_pixel(z_pos)
 		
-	# Re-sync EMP nodes:
-	# 1. Remove collected EMPs
+		# Find the closest existing zombie node to target
+		var best_node: ColorRect = null
+		var min_dist = 999999.0
+		
+		for node in unused_zombies:
+			var dist = node.position.distance_to(target_pixel)
+			if dist < min_dist:
+				min_dist = dist
+				best_node = node
+				
+		# Only reuse if it's within a reasonable distance (moved, not reset)
+		if best_node and min_dist < TILE_SIZE * 2.5:
+			unused_zombies.erase(best_node)
+			zombie_tween.tween_property(best_node, "position", target_pixel, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			new_zombie_nodes.append(best_node)
+		else:
+			# Spawn new node and snap to position
+			var rect = create_zombie_visual(z_pos)
+			new_zombie_nodes.append(rect)
+			
+	# 3. Fade out deleted zombies
+	for node in unused_zombies:
+		var fade_tween = create_tween()
+		fade_tween.tween_property(node, "modulate:a", 0.0, 0.15)
+		fade_tween.tween_callback(node.queue_free)
+		
+	zombie_nodes = new_zombie_nodes
+		
+	# 4. Re-sync EMP nodes
+	# Remove collected EMPs (fade out)
 	for emp_pos in emp_nodes.keys():
 		if not model.emp_positions.has(emp_pos):
-			emp_nodes[emp_pos].queue_free()
+			var node = emp_nodes[emp_pos]
 			emp_nodes.erase(emp_pos)
-	# 2. Recreate undone EMPs
+			var fade_tween = create_tween()
+			fade_tween.tween_property(node, "modulate:a", 0.0, 0.15)
+			fade_tween.tween_callback(node.queue_free)
+			
+	# Recreate undone EMPs (fade in)
 	for emp_pos in model.emp_positions:
 		if not emp_nodes.has(emp_pos):
 			create_emp_visual(emp_pos)
+			var node = emp_nodes[emp_pos]
+			node.modulate.a = 0.0
+			var fade_in = create_tween()
+			fade_in.tween_property(node, "modulate:a", 1.0, 0.15)
 
 func create_emp_visual(grid_pos: Vector2i) -> void:
 	var rect = create_tile_rect(grid_pos, COLOR_EMP, COLOR_EMP_BORDER, 2.0)
@@ -141,16 +182,15 @@ func create_emp_visual(grid_pos: Vector2i) -> void:
 	add_child(rect)
 	emp_nodes[grid_pos] = rect
 
-func create_zombie_visual(grid_pos: Vector2i) -> void:
+func create_zombie_visual(grid_pos: Vector2i) -> ColorRect:
 	var rect = create_tile_rect(grid_pos, COLOR_ZOMBIE, Color.WHITE, 2.0)
-	# Add an inner danger square
 	var inner = ColorRect.new()
 	inner.color = Color("230000")
 	inner.size = Vector2(TILE_SIZE * 0.4, TILE_SIZE * 0.4)
 	inner.position = (rect.size - inner.size) / 2.0
 	rect.add_child(inner)
 	add_child(rect)
-	zombie_nodes.append(rect)
+	return rect
 
 func update_exit_portal(unlocked: bool) -> void:
 	if exit_sprite:
