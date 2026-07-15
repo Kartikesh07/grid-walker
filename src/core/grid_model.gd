@@ -59,6 +59,7 @@ func move(direction: Vector2i) -> Dictionary:
 		
 	# Player move is valid
 	report["success"] = true
+	var old_admin_pos = admin_pos
 	admin_pos = proposed_admin_pos
 	report["admin_new"] = admin_pos
 	
@@ -104,11 +105,28 @@ func move(direction: Vector2i) -> Dictionary:
 			surviving_zombies.append(z_pos)
 	zombie_positions = surviving_zombies
 	
+	# 3.5. Check for Breach/Failure collisions (Same-cell & Swapping)
+	# Check same-cell collision
+	for z_pos in zombie_positions:
+		if z_pos == admin_pos:
+			game_over = true
+			print("Breach detected: Same cell collision!")
+			break
+			
+	# Check swapping collision (crossing paths in opposite directions)
+	if not game_over:
+		for i in range(zombie_positions.size()):
+			# Did the zombie and player swap tiles this turn?
+			if admin_pos == old_zombies[i] and zombie_positions[i] == old_admin_pos:
+				game_over = true
+				print("Breach detected: Swapping collision!")
+				break
+	
 	# 4. Check Exit Portal unlock state
 	exit_unlocked = zombie_positions.is_empty()
 	
-	# 5. Check Victory conditions (Stepping on unlocked exit)
-	if admin_pos == exit_pos and exit_unlocked:
+	# 5. Check Victory conditions (Stepping on unlocked exit, if not breached)
+	if not game_over and admin_pos == exit_pos and exit_unlocked:
 		victory = true
 		print("Victory achieved in model!")
 		

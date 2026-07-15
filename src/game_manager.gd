@@ -40,9 +40,12 @@ func _on_move_requested(direction: Vector2i) -> void:
 		# Update visuals instantly
 		level_view.snap_to_state(model)
 		
-		# Check for victory conditions
+		# Check for victory or game over conditions
 		if model.victory:
 			print("VICTORY! Level completed successfully!")
+			_restart_level()
+		elif model.game_over:
+			print("BREACHED! Game Over!")
 			_restart_level()
 
 func _on_undo_requested() -> void:
