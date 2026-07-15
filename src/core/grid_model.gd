@@ -48,16 +48,41 @@ func move(direction: Vector2i) -> Dictionary:
 	admin_pos = proposed_admin_pos
 	report["admin_new"] = admin_pos
 	
-	# 2. Move Zombies in mirrored direction (blocked by walls or grid edges)
+	# 2. Move Zombies in mirrored direction (preventing overlaps)
 	var old_zombies = zombie_positions.duplicate()
 	var new_zombies: Array = []
 	
-	for i in range(old_zombies.size()):
-		var proposed_zombie_pos = old_zombies[i] - direction # Mirrored
-		if is_in_bounds(proposed_zombie_pos) and not proposed_zombie_pos in wall_positions:
-			new_zombies.append(proposed_zombie_pos)
+	# Sort zombies so leading ones in the direction of movement (-direction) are processed first
+	var z_move = -direction
+	var sorted_zombies = old_zombies.duplicate()
+	sorted_zombies.sort_custom(func(a: Vector2i, b: Vector2i):
+		var score_a = a.x * z_move.x + a.y * z_move.y
+		var score_b = b.x * z_move.x + b.y * z_move.y
+		return score_a > score_b # Descending order (furthest along movement direction first)
+	)
+	
+	var remaining = sorted_zombies.duplicate()
+	
+	for z in sorted_zombies:
+		remaining.erase(z)
+		var proposed_z_pos = z - direction # Mirrored
+		
+		# Check if the destination is free from:
+		# - Grid boundary limits
+		# - Static firewalls
+		# - Already moved zombies in this turn
+		# - Stationary zombies that have not moved yet
+		var can_move = (
+			is_in_bounds(proposed_z_pos) and
+			not proposed_z_pos in wall_positions and
+			not proposed_z_pos in new_zombies and
+			not proposed_z_pos in remaining
+		)
+		
+		if can_move:
+			new_zombies.append(proposed_z_pos)
 		else:
-			new_zombies.append(old_zombies[i]) # Remain in place if blocked
+			new_zombies.append(z) # Stay in place if blocked
 			
 	zombie_positions = new_zombies
 	report["zombies_new"] = zombie_positions.duplicate()

@@ -34,7 +34,7 @@ var admin_sprite: ColorRect = null
 var exit_sprite: ColorRect = null
 var wall_nodes: Array[ColorRect] = []
 var gc_nodes: Array[ColorRect] = []
-var zombie_nodes: Dictionary = {} # Maps logical Vector2i -> ColorRect
+var zombie_nodes: Array[ColorRect] = [] # Maps list of active zombie nodes (changed from Dictionary to prevent leaks)
 var emp_nodes: Dictionary = {} # Maps logical Vector2i -> ColorRect
 
 func setup(model: GridModel) -> void:
@@ -96,7 +96,7 @@ func clear_visuals() -> void:
 	for node in gc_nodes:
 		node.queue_free()
 	gc_nodes.clear()
-	for node in zombie_nodes.values():
+	for node in zombie_nodes:
 		node.queue_free()
 	zombie_nodes.clear()
 	for node in emp_nodes.values():
@@ -109,7 +109,7 @@ func snap_to_state(model: GridModel) -> void:
 		admin_sprite.position = grid_to_pixel(model.admin_pos)
 			
 	# Re-sync Zombie nodes (they could have moved)
-	for node in zombie_nodes.values():
+	for node in zombie_nodes:
 		node.queue_free()
 	zombie_nodes.clear()
 	for z_pos in model.zombie_positions:
@@ -134,7 +134,7 @@ func create_zombie_visual(grid_pos: Vector2i) -> void:
 	inner.position = (rect.size - inner.size) / 2.0
 	rect.add_child(inner)
 	add_child(rect)
-	zombie_nodes[grid_pos] = rect
+	zombie_nodes.append(rect)
 
 func update_exit_portal(unlocked: bool) -> void:
 	if exit_sprite:
