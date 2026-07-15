@@ -153,12 +153,14 @@ func create_tile_rect(grid_pos: Vector2i, fill_color: Color, border_color: Color
 	rect.size = Vector2(TILE_SIZE - 4, TILE_SIZE - 4) # Padding of 2px on each side
 	rect.position = grid_to_pixel(grid_pos)
 	rect.color = border_color
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	
 	# Inner fill
 	var fill = ColorRect.new()
 	fill.size = rect.size - Vector2(border_width * 2, border_width * 2)
 	fill.position = Vector2(border_width, border_width)
 	fill.color = fill_color
+	fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rect.add_child(fill)
 	
 	return rect
