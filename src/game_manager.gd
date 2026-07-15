@@ -3,12 +3,23 @@ extends Node
 const GridModelClass = preload("res://src/core/grid_model.gd")
 const LevelDataClass = preload("res://src/core/level_data.gd")
 
+# Audio assets preloads
+const STREAM_BG_MUSIC = preload("res://Music/BackgrounMusic.wav")
+const STREAM_BUTTON_CLICK = preload("res://Music/ButtonClick.wav")
+const STREAM_EMP = preload("res://Music/EMP.wav")
+const STREAM_FAILURE = preload("res://Music/Faillure.wav")
+const STREAM_MOVE = preload("res://Music/Move.wav")
+const STREAM_VICTORY = preload("res://Music/Victory.wav")
+
 @onready var level_view: Node2D = $LevelView
 @onready var hud: CanvasLayer = $HUD
 
 var model: GridModel = null
 var current_level_data: LevelData = null
 var history: HistoryManager = null
+
+# Programmatic music player
+var bg_music_player: AudioStreamPlayer = null
 
 func _ready() -> void:
 	# Instantiate GridModel and HistoryManager
@@ -36,32 +47,49 @@ func _ready() -> void:
 	
 	# Initialize HUD button and cycle states
 	_update_hud_states()
+	
+	# Start looping background music
+	_setup_background_music()
 
 func _on_move_requested(direction: Vector2i) -> void:
 	# Capture the pre-move state and save it to the history stack
 	var state_before_move = model.serialize_state()
+	
+	# Record EMP presence before movement to detect collection
+	var had_emp_before = model.admin_pos in model.emp_positions
 	
 	var report = model.move(direction)
 	if report["success"]:
 		# Push state to history only if the move was successful
 		history.push_state(state_before_move)
 		print("Player moved to: ", model.admin_pos)
+		
 		# Update visuals with slide animations matching player move direction
 		level_view.snap_to_state(model, direction)
 		
 		# Show HUD popups for win/loss instead of instantly resetting
 		if model.victory:
 			print("VICTORY! Level completed successfully!")
+			play_sfx(STREAM_VICTORY)
 			hud.show_victory()
 		elif model.game_over:
 			print("BREACHED! Game Over!")
+			play_sfx(STREAM_FAILURE)
 			hud.show_breach()
 		else:
-			# Update buttons and cycles count for normal play
+			# Play movement sound
+			play_sfx(STREAM_MOVE)
+			# Play EMP sound if collected during this step
+			var has_emp_now = model.admin_pos in model.emp_positions
+			# If the EMP is no longer in emp_positions, it was collected this turn
+			if state_before_move["emp_positions"].has(model.admin_pos) and not model.emp_positions.has(model.admin_pos):
+				play_sfx(STREAM_EMP)
+				
 			_update_hud_states()
 
 func _on_undo_requested() -> void:
 	if history.can_undo():
+		play_sfx(STREAM_BUTTON_CLICK)
 		# Capture current state to push to the redo stack, and retrieve previous state
 		var current_state = model.serialize_state()
 		var previous_state = history.undo(current_state)
@@ -77,6 +105,7 @@ func _on_undo_requested() -> void:
 
 func _on_redo_requested() -> void:
 	if history.can_redo():
+		play_sfx(STREAM_BUTTON_CLICK)
 		# Capture current state to push to the undo stack, and retrieve next state
 		var current_state = model.serialize_state()
 		var next_state = history.redo(current_state)
@@ -87,8 +116,10 @@ func _on_redo_requested() -> void:
 		
 		# Re-evaluate popup state based on redo state
 		if model.victory:
+			play_sfx(STREAM_VICTORY)
 			hud.show_victory()
 		elif model.game_over:
+			play_sfx(STREAM_FAILURE)
 			hud.show_breach()
 		else:
 			hud.hide_popup()
@@ -99,6 +130,7 @@ func _on_redo_requested() -> void:
 		print("Redo stack empty.")
 
 func _on_hud_restart() -> void:
+	play_sfx(STREAM_BUTTON_CLICK)
 	_restart_level()
 	hud.hide_popup()
 
@@ -119,3 +151,25 @@ func _restart_level() -> void:
 func _update_hud_states() -> void:
 	hud.update_history_buttons(history.can_undo(), history.can_redo())
 	hud.update_cycles(model.remaining_cycles, model.max_cycles)
+
+# Sets up background music with proper looping configuration in Godot 4
+func _setup_background_music() -> void:
+	bg_music_player = AudioStreamPlayer.new()
+	bg_music_player.stream = STREAM_BG_MUSIC
+	bg_music_player.volume_db = -12.0 # Keep BGM ambient and low-key
+	
+	# Configure looping on WAV importer resource
+	if STREAM_BG_MUSIC is AudioStreamWAV:
+		(STREAM_BG_MUSIC as AudioStreamWAV).loop_mode = AudioStreamWAV.LOOP_FORWARD
+		
+	add_child(bg_music_player)
+	bg_music_player.play()
+
+# Plays overlapping one-shot SFX channels that free themselves from the tree on finish
+func play_sfx(stream: AudioStream) -> void:
+	var player = AudioStreamPlayer.new()
+	player.stream = stream
+	player.volume_db = -2.0 # Keep SFX punchy but not clipping
+	add_child(player)
+	player.play()
+	player.finished.connect(player.queue_free)
