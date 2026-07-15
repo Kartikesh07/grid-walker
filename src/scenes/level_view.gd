@@ -105,7 +105,7 @@ func clear_visuals() -> void:
 		node.queue_free()
 	emp_nodes.clear()
 
-func snap_to_state(model: GridModel) -> void:
+func snap_to_state(model: GridModel, direction: Vector2i = Vector2i.ZERO) -> void:
 	# 1. Slide the Player node smoothly
 	if admin_sprite:
 		var target_pos = grid_to_pixel(model.admin_pos)
@@ -115,43 +115,61 @@ func snap_to_state(model: GridModel) -> void:
 	# Sync Exit Portal state visually
 	update_exit_portal(model.exit_unlocked)
 			
-	# 2. Slide Zombie nodes smoothly matching target positions
-	var unused_zombies = zombie_nodes.duplicate()
+	# 2. Match and Slide Zombie nodes smoothly based on movement rules
+	var targets = model.zombie_positions.duplicate()
 	var new_zombie_nodes: Array[ColorRect] = []
 	
 	var zombie_tween: Tween = null
 	
-	for z_pos in model.zombie_positions:
-		var target_pixel = grid_to_pixel(z_pos)
+	for node in zombie_nodes:
+		var old_grid_pos = pixel_to_grid(node.position)
 		
-		# Find the closest existing zombie node to target
-		var best_node: ColorRect = null
-		var min_dist = 999999.0
+		# Valid expected next positions for this zombie
+		var moved_pos = old_grid_pos - direction # Mirrored
+		var stayed_pos = old_grid_pos
 		
-		for node in unused_zombies:
-			var dist = node.position.distance_to(target_pixel)
-			if dist < min_dist:
-				min_dist = dist
-				best_node = node
-				
-		# Only reuse if it's within a reasonable distance (moved, not reset)
-		if best_node and min_dist < TILE_SIZE * 2.5:
-			unused_zombies.erase(best_node)
+		var matched_target = Vector2i(-999, -999)
+		
+		if direction != Vector2i.ZERO and targets.has(moved_pos):
+			matched_target = moved_pos
+		elif targets.has(stayed_pos):
+			matched_target = stayed_pos
+			
+		if matched_target != Vector2i(-999, -999):
+			# Slide matching zombie to target pixel position
+			targets.erase(matched_target)
+			var target_pixel = grid_to_pixel(matched_target)
+			
 			if zombie_tween == null:
 				zombie_tween = create_tween()
 				zombie_tween.set_parallel(true)
-			zombie_tween.tween_property(best_node, "position", target_pixel, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-			new_zombie_nodes.append(best_node)
+			zombie_tween.tween_property(node, "position", target_pixel, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			new_zombie_nodes.append(node)
 		else:
-			# Spawn new node and snap to position
-			var rect = create_zombie_visual(z_pos)
-			new_zombie_nodes.append(rect)
-			
-	# 3. Fade out deleted zombies
-	for node in unused_zombies:
-		var fade_tween = create_tween()
-		fade_tween.tween_property(node, "modulate:a", 0.0, 0.15)
-		fade_tween.tween_callback(node.queue_free)
+			# Zombie was deleted. Slide it to GC/moved position and fade it out!
+			if direction != Vector2i.ZERO:
+				var target_pixel = grid_to_pixel(moved_pos)
+				var fade_tween = create_tween()
+				fade_tween.set_parallel(true)
+				fade_tween.tween_property(node, "position", target_pixel, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+				fade_tween.tween_property(node, "modulate:a", 0.0, 0.15)
+				# Free the node after slide ends
+				var callback_tween = create_tween()
+				callback_tween.tween_interval(0.15)
+				callback_tween.tween_callback(node.queue_free)
+			else:
+				# Instant fade out (on restarts/undos)
+				var fade_tween = create_tween()
+				fade_tween.tween_property(node, "modulate:a", 0.0, 0.15)
+				fade_tween.tween_callback(node.queue_free)
+				
+	# 3. Any leftover targets are newly spawned or restored zombies (fade them in)
+	for target in targets:
+		var rect = create_zombie_visual(target)
+		rect.modulate.a = 0.0
+		var fade_in = create_tween()
+		fade_in.tween_property(rect, "modulate:a", 1.0, 0.15)
+		new_zombie_nodes.append(rect)
 		
 	zombie_nodes = new_zombie_nodes
 		
@@ -227,6 +245,13 @@ func recalculate_layout() -> void:
 
 func grid_to_pixel(grid_pos: Vector2i) -> Vector2:
 	return grid_origin + Vector2(grid_pos.x * TILE_SIZE + 2, grid_pos.y * TILE_SIZE + 2)
+
+# Converts a pixel coordinate position back to its logical Vector2i grid position
+func pixel_to_grid(pixel_pos: Vector2) -> Vector2i:
+	var local_pos = pixel_pos - grid_origin - Vector2(2, 2)
+	var x = round(local_pos.x / TILE_SIZE)
+	var y = round(local_pos.y / TILE_SIZE)
+	return Vector2i(x, y)
 
 func _draw() -> void:
 	# Draw main grid container background

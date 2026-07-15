@@ -46,8 +46,8 @@ func _on_move_requested(direction: Vector2i) -> void:
 		# Push state to history only if the move was successful
 		history.push_state(state_before_move)
 		print("Player moved to: ", model.admin_pos)
-		# Update visuals instantly
-		level_view.snap_to_state(model)
+		# Update visuals with slide animations matching player move direction
+		level_view.snap_to_state(model, direction)
 		
 		# Show HUD popups for win/loss instead of instantly resetting
 		if model.victory:
