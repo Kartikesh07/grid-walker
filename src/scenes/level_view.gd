@@ -119,6 +119,17 @@ func snap_to_state(model: GridModel) -> void:
 	zombie_nodes.clear()
 	for z_pos in model.zombie_positions:
 		create_zombie_visual(z_pos)
+		
+	# Re-sync EMP nodes:
+	# 1. Remove collected EMPs
+	for emp_pos in emp_nodes.keys():
+		if not model.emp_positions.has(emp_pos):
+			emp_nodes[emp_pos].queue_free()
+			emp_nodes.erase(emp_pos)
+	# 2. Recreate undone EMPs
+	for emp_pos in model.emp_positions:
+		if not emp_nodes.has(emp_pos):
+			create_emp_visual(emp_pos)
 
 func create_emp_visual(grid_pos: Vector2i) -> void:
 	var rect = create_tile_rect(grid_pos, COLOR_EMP, COLOR_EMP_BORDER, 2.0)

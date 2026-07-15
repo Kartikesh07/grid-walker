@@ -19,6 +19,7 @@ var exit_pos: Vector2i = Vector2i.ZERO
 var exit_unlocked: bool = false
 var victory: bool = false
 var game_over: bool = false
+var emp_active_turns: int = 0
 
 # Initialize from LevelData (Loading all layouts)
 func initialize(level_data: Resource) -> void:
@@ -34,6 +35,7 @@ func initialize(level_data: Resource) -> void:
 	exit_unlocked = zombie_positions.is_empty()
 	victory = false
 	game_over = false
+	emp_active_turns = 0
 
 # Move turn: moves player and moves all zombies (blocked by walls/edges only)
 func move(direction: Vector2i) -> Dictionary:
@@ -45,7 +47,8 @@ func move(direction: Vector2i) -> Dictionary:
 		"zombies_new": zombie_positions.duplicate(),
 		"victory": victory,
 		"game_over": game_over,
-		"exit_unlocked": exit_unlocked
+		"exit_unlocked": exit_unlocked,
+		"emp_active_turns": emp_active_turns
 	}
 	
 	# If game is already won or lost, block any further moves
@@ -63,37 +66,43 @@ func move(direction: Vector2i) -> Dictionary:
 	admin_pos = proposed_admin_pos
 	report["admin_new"] = admin_pos
 	
-	# 2. Move Zombies in mirrored direction (preventing overlaps)
+	# 2. Move Zombies (Mirrored direction unless EMP freeze is active)
 	var old_zombies = zombie_positions.duplicate()
 	var new_zombies: Array = []
 	
-	# Sort zombies so leading ones in the direction of movement (-direction) are processed first
-	var z_move = -direction
-	var sorted_zombies = old_zombies.duplicate()
-	sorted_zombies.sort_custom(func(a: Vector2i, b: Vector2i):
-		var score_a = a.x * z_move.x + a.y * z_move.y
-		var score_b = b.x * z_move.x + b.y * z_move.y
-		return score_a > score_b # Descending order
-	)
-	
-	var remaining = sorted_zombies.duplicate()
-	
-	for z in sorted_zombies:
-		remaining.erase(z)
-		var proposed_z_pos = z - direction # Mirrored
-		
-		var can_move = (
-			is_in_bounds(proposed_z_pos) and
-			not proposed_z_pos in wall_positions and
-			not proposed_z_pos in new_zombies and
-			not proposed_z_pos in remaining
+	if emp_active_turns > 0:
+		# Frozen: Zombies stay in their current places
+		new_zombies = old_zombies.duplicate()
+		emp_active_turns -= 1
+		print("Zombies are frozen! Turns remaining: ", emp_active_turns)
+	else:
+		# Not Frozen: Sort and calculate mirrored movements
+		var z_move = -direction
+		var sorted_zombies = old_zombies.duplicate()
+		sorted_zombies.sort_custom(func(a: Vector2i, b: Vector2i):
+			var score_a = a.x * z_move.x + a.y * z_move.y
+			var score_b = b.x * z_move.x + b.y * z_move.y
+			return score_a > score_b # Descending order
 		)
 		
-		if can_move:
-			new_zombies.append(proposed_z_pos)
-		else:
-			new_zombies.append(z) # Stay in place if blocked
+		var remaining = sorted_zombies.duplicate()
+		
+		for z in sorted_zombies:
+			remaining.erase(z)
+			var proposed_z_pos = z - direction # Mirrored
 			
+			var can_move = (
+				is_in_bounds(proposed_z_pos) and
+				not proposed_z_pos in wall_positions and
+				not proposed_z_pos in new_zombies and
+				not proposed_z_pos in remaining
+			)
+			
+			if can_move:
+				new_zombies.append(proposed_z_pos)
+			else:
+				new_zombies.append(z) # Stay in place if blocked
+				
 	zombie_positions = new_zombies
 	
 	# 3. Check for Garbage Collection Deletions
@@ -105,18 +114,21 @@ func move(direction: Vector2i) -> Dictionary:
 			surviving_zombies.append(z_pos)
 	zombie_positions = surviving_zombies
 	
-	# 3.5. Check for Breach/Failure collisions (Same-cell & Swapping)
-	# Check same-cell collision
+	# 3.5 Check for EMP Collection (Step onto an EMP tile after moving)
+	if admin_pos in emp_positions:
+		emp_positions.erase(admin_pos)
+		emp_active_turns = 2
+		print("EMP collected! Zombies frozen for 2 turns.")
+	
+	# 3.8. Check for Breach/Failure collisions (Same-cell & Swapping)
 	for z_pos in zombie_positions:
 		if z_pos == admin_pos:
 			game_over = true
 			print("Breach detected: Same cell collision!")
 			break
 			
-	# Check swapping collision (crossing paths in opposite directions)
 	if not game_over:
 		for i in range(zombie_positions.size()):
-			# Did the zombie and player swap tiles this turn?
 			if admin_pos == old_zombies[i] and zombie_positions[i] == old_admin_pos:
 				game_over = true
 				print("Breach detected: Swapping collision!")
@@ -134,6 +146,7 @@ func move(direction: Vector2i) -> Dictionary:
 	report["exit_unlocked"] = exit_unlocked
 	report["victory"] = victory
 	report["game_over"] = game_over
+	report["emp_active_turns"] = emp_active_turns
 	
 	return report
 
@@ -149,7 +162,8 @@ func serialize_state() -> Dictionary:
 		"emp_positions": emp_positions.duplicate(),
 		"exit_unlocked": exit_unlocked,
 		"victory": victory,
-		"game_over": game_over
+		"game_over": game_over,
+		"emp_active_turns": emp_active_turns
 	}
 
 # Simple deserialization for history management
@@ -160,3 +174,4 @@ func deserialize_state(state: Dictionary) -> void:
 	exit_unlocked = state["exit_unlocked"]
 	victory = state["victory"]
 	game_over = state["game_over"]
+	emp_active_turns = state["emp_active_turns"]
