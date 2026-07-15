@@ -4,12 +4,16 @@ const GridModelClass = preload("res://src/core/grid_model.gd")
 const LevelDataClass = preload("res://src/core/level_data.gd")
 
 # Audio assets preloads
-const STREAM_BG_MUSIC = preload("res://Music/BackgrounMusic.wav")
+const STREAM_BG_MUSIC = preload("res://Music/BackgrounMusic2.mp3")
 const STREAM_BUTTON_CLICK = preload("res://Music/ButtonClick.wav")
 const STREAM_EMP = preload("res://Music/EMP.wav")
 const STREAM_FAILURE = preload("res://Music/Faillure.wav")
-const STREAM_MOVE = preload("res://Music/Move.wav")
+const STREAM_MOVE = preload("res://Music/Move2.wav") # Swapped to Move2.wav
 const STREAM_VICTORY = preload("res://Music/Victory.wav")
+
+# Expose volume settings to Godot Inspector for easy customization
+@export var sfx_volume_db: float = -12.0 # Default SFX volume (softer)
+@export var bgm_volume_db: float = -6.0  # Default BGM volume (audible)
 
 @onready var level_view: Node2D = $LevelView
 @onready var hud: CanvasLayer = $HUD
@@ -156,11 +160,14 @@ func _update_hud_states() -> void:
 func _setup_background_music() -> void:
 	bg_music_player = AudioStreamPlayer.new()
 	bg_music_player.stream = STREAM_BG_MUSIC
-	bg_music_player.volume_db = -12.0 # Keep BGM ambient and low-key
+	bg_music_player.volume_db = bgm_volume_db
 	
-	# Configure looping on WAV importer resource
-	if STREAM_BG_MUSIC is AudioStreamWAV:
-		(STREAM_BG_MUSIC as AudioStreamWAV).loop_mode = AudioStreamWAV.LOOP_FORWARD
+	# Upcast to generic AudioStream to bypass static compile type checking
+	var base_stream = STREAM_BG_MUSIC as AudioStream
+	if base_stream is AudioStreamWAV:
+		(base_stream as AudioStreamWAV).loop_mode = AudioStreamWAV.LOOP_FORWARD
+	elif base_stream is AudioStreamMP3:
+		(base_stream as AudioStreamMP3).loop = true
 		
 	add_child(bg_music_player)
 	bg_music_player.play()
@@ -169,7 +176,7 @@ func _setup_background_music() -> void:
 func play_sfx(stream: AudioStream) -> void:
 	var player = AudioStreamPlayer.new()
 	player.stream = stream
-	player.volume_db = -2.0 # Keep SFX punchy but not clipping
+	player.volume_db = sfx_volume_db
 	add_child(player)
 	player.play()
 	player.finished.connect(player.queue_free)

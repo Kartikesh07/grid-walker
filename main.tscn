@@ -90,6 +90,8 @@ corner_radius_bottom_left = 6
 
 [node name="Main" type="Node2D" unique_id=1907273590]
 script = ExtResource("1_0xm2m")
+sfx_volume_db = null
+bgm_volume_db = null
 
 [node name="LevelView" type="Node2D" parent="." unique_id=1311594979]
 script = ExtResource("1_ig7tw")

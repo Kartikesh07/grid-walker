@@ -166,7 +166,7 @@ func snap_to_state(model: GridModel, direction: Vector2i = Vector2i.ZERO) -> voi
 	# 3. Any leftover targets are newly spawned or restored zombies (fade them in)
 	for target in targets:
 		var rect = create_zombie_visual(target)
-		rect.modulate.a = 0.0
+		rect.modulate = Color(rect.modulate, 0.0)
 		var fade_in = create_tween()
 		fade_in.tween_property(rect, "modulate:a", 1.0, 0.15)
 		new_zombie_nodes.append(rect)
@@ -188,7 +188,7 @@ func snap_to_state(model: GridModel, direction: Vector2i = Vector2i.ZERO) -> voi
 		if not emp_nodes.has(emp_pos):
 			create_emp_visual(emp_pos)
 			var node = emp_nodes[emp_pos]
-			node.modulate.a = 0.0
+			node.modulate = Color(node.modulate, 0.0)
 			var fade_in = create_tween()
 			fade_in.tween_property(node, "modulate:a", 1.0, 0.15)
 
