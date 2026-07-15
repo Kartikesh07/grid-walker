@@ -119,8 +119,7 @@ func snap_to_state(model: GridModel) -> void:
 	var unused_zombies = zombie_nodes.duplicate()
 	var new_zombie_nodes: Array[ColorRect] = []
 	
-	var zombie_tween = create_tween()
-	zombie_tween.set_parallel(true)
+	var zombie_tween: Tween = null
 	
 	for z_pos in model.zombie_positions:
 		var target_pixel = grid_to_pixel(z_pos)
@@ -138,6 +137,9 @@ func snap_to_state(model: GridModel) -> void:
 		# Only reuse if it's within a reasonable distance (moved, not reset)
 		if best_node and min_dist < TILE_SIZE * 2.5:
 			unused_zombies.erase(best_node)
+			if zombie_tween == null:
+				zombie_tween = create_tween()
+				zombie_tween.set_parallel(true)
 			zombie_tween.tween_property(best_node, "position", target_pixel, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 			new_zombie_nodes.append(best_node)
 		else:
