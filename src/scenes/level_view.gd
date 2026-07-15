@@ -338,6 +338,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			
 	# 2. Mouse Drag (Desktop Browser testing)
 	elif event is InputEventMouseButton:
+		# Skip mouse events on mobile/web-mobile to prevent duplicate touch emulation
+		if OS.has_feature("mobile"):
+			return
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			if event.pressed:
 				touch_start_pos = event.position
