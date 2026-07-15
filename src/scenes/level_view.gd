@@ -7,6 +7,10 @@ signal redo_requested()
 
 const TILE_SIZE: float = 80.0
 
+# Preload Unity-style Particle Prefabs (Scenes)
+const GC_EXPLOSION_SCENE = preload("res://src/scenes/gc_explosion.tscn")
+const EMP_SPARKS_SCENE = preload("res://src/scenes/emp_sparks.tscn")
+
 # Color Palette (Neon Cyberpunk)
 const COLOR_BG = Color("0a0a16")
 const COLOR_GRID_LINE = Color("1e1e3f")
@@ -34,6 +38,7 @@ const SWIPE_THRESHOLD: float = 50.0
 # Node references
 var admin_sprite: ColorRect = null
 var exit_sprite: ColorRect = null
+var exit_tween: Tween = null # Looping portal pulse animation
 var wall_nodes: Array[ColorRect] = []
 var gc_nodes: Array[ColorRect] = []
 var zombie_nodes: Array[ColorRect] = []
@@ -65,6 +70,7 @@ func setup(model: GridModel) -> void:
 	# 3. Create Exit Portal node
 	exit_sprite = create_tile_rect(model.exit_pos, COLOR_EXIT_LOCKED, COLOR_GRID_LINE, 2.0)
 	add_child(exit_sprite)
+	
 	update_exit_portal(model.exit_unlocked)
 	
 	# 4. Create Admin Node visual
@@ -92,6 +98,9 @@ func clear_visuals() -> void:
 	if exit_sprite:
 		exit_sprite.queue_free()
 		exit_sprite = null
+	if exit_tween:
+		exit_tween.kill()
+		exit_tween = null
 	for node in wall_nodes:
 		node.queue_free()
 	wall_nodes.clear()
@@ -153,6 +162,10 @@ func snap_to_state(model: GridModel, direction: Vector2i = Vector2i.ZERO) -> voi
 				fade_tween.set_parallel(true)
 				fade_tween.tween_property(node, "position", target_pixel, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 				fade_tween.tween_property(node, "modulate:a", 0.0, 0.15)
+				
+				# Instantiate and trigger GC explosion particle scene
+				spawn_one_shot(GC_EXPLOSION_SCENE, target_pixel + Vector2(TILE_SIZE/2, TILE_SIZE/2))
+				
 				# Free the node after slide ends
 				var callback_tween = create_tween()
 				callback_tween.tween_interval(0.15)
@@ -179,6 +192,10 @@ func snap_to_state(model: GridModel, direction: Vector2i = Vector2i.ZERO) -> voi
 		if not model.emp_positions.has(emp_pos):
 			var node = emp_nodes[emp_pos]
 			emp_nodes.erase(emp_pos)
+			
+			# Instantiate and trigger EMP Sparks particle scene
+			spawn_one_shot(EMP_SPARKS_SCENE, node.position + Vector2(TILE_SIZE/2, TILE_SIZE/2))
+			
 			var fade_tween = create_tween()
 			fade_tween.tween_property(node, "modulate:a", 0.0, 0.15)
 			fade_tween.tween_callback(node.queue_free)
@@ -218,6 +235,19 @@ func update_exit_portal(unlocked: bool) -> void:
 		if fill:
 			fill.color = COLOR_EXIT_UNLOCKED if unlocked else COLOR_EXIT_LOCKED
 		exit_sprite.color = COLOR_EXIT_UNLOCKED if unlocked else COLOR_GRID_LINE
+			
+		# Loop pulse opacity of portal when unlocked
+		if unlocked:
+			if exit_tween == null:
+				exit_tween = create_tween()
+				exit_tween.set_loops() # Infinite loop
+				exit_tween.tween_property(exit_sprite, "modulate:a", 0.4, 0.6).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+				exit_tween.tween_property(exit_sprite, "modulate:a", 1.0, 0.6).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		else:
+			if exit_tween:
+				exit_tween.kill()
+				exit_tween = null
+			exit_sprite.modulate.a = 1.0
 
 func create_tile_rect(grid_pos: Vector2i, fill_color: Color, border_color: Color, border_width: float) -> ColorRect:
 	var rect = ColorRect.new()
@@ -252,6 +282,17 @@ func pixel_to_grid(pixel_pos: Vector2) -> Vector2i:
 	var x = round(local_pos.x / TILE_SIZE)
 	var y = round(local_pos.y / TILE_SIZE)
 	return Vector2i(x, y)
+
+# Helper to instantiate a preloaded particle scene prefab, play it, and auto-delete
+func spawn_one_shot(scene: PackedScene, global_pos: Vector2) -> void:
+	var particles = scene.instantiate() as CPUParticles2D
+	particles.position = global_pos
+	add_child(particles)
+	particles.emitting = true
+	
+	# Timer callback to clean up the particle node once finished
+	var timer = get_tree().create_timer(particles.lifetime + 0.1)
+	timer.timeout.connect(particles.queue_free)
 
 func _draw() -> void:
 	# Draw main grid container background
