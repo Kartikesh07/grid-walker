@@ -32,6 +32,9 @@ func _ready() -> void:
 	# Connect HUD action requests
 	hud.restart_requested.connect(_on_hud_restart)
 	hud.undo_requested.connect(_on_hud_undo)
+	
+	# Initialize HUD button states
+	_update_hud_states()
 
 func _on_move_requested(direction: Vector2i) -> void:
 	# Capture the pre-move state and save it to the history stack
@@ -52,6 +55,9 @@ func _on_move_requested(direction: Vector2i) -> void:
 		elif model.game_over:
 			print("BREACHED! Game Over!")
 			hud.show_breach()
+		else:
+			# Update buttons for normal play
+			_update_hud_states()
 
 func _on_undo_requested() -> void:
 	if history.can_undo():
@@ -63,6 +69,7 @@ func _on_undo_requested() -> void:
 		model.deserialize_state(previous_state)
 		level_view.snap_to_state(model)
 		hud.hide_popup() # Hide popup since we've rewound to safety
+		_update_hud_states()
 		print("Undo executed. Player back at: ", model.admin_pos)
 	else:
 		print("Undo stack empty.")
@@ -84,6 +91,7 @@ func _on_redo_requested() -> void:
 			hud.show_breach()
 		else:
 			hud.hide_popup()
+			_update_hud_states()
 			
 		print("Redo executed. Player forward at: ", model.admin_pos)
 	else:
@@ -101,3 +109,8 @@ func _restart_level() -> void:
 	history.clear()
 	model.initialize(current_level_data)
 	level_view.setup(model)
+	_update_hud_states()
+
+# Refreshes the persistent HUD button states based on history availability
+func _update_hud_states() -> void:
+	hud.update_history_buttons(history.can_undo(), history.can_redo())
