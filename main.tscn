@@ -10,3 +10,7 @@ script = ExtResource("1_0xm2m")
 script = ExtResource("1_ig7tw")
 
 [node name="HUD" type="CanvasLayer" parent="." unique_id=126121277]
+
+[node name="GameEndPopup" type="Panel" parent="HUD" unique_id=1662449210]
+offset_right = 40.0
+offset_bottom = 40.0
