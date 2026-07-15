@@ -4,6 +4,7 @@ const GridModelClass = preload("res://src/core/grid_model.gd")
 const LevelDataClass = preload("res://src/core/level_data.gd")
 
 @onready var level_view: Node2D = $LevelView
+@onready var hud: CanvasLayer = $HUD
 
 var model: GridModel = null
 var current_level_data: LevelData = null
@@ -27,6 +28,10 @@ func _ready() -> void:
 	level_view.move_requested.connect(_on_move_requested)
 	level_view.undo_requested.connect(_on_undo_requested)
 	level_view.redo_requested.connect(_on_redo_requested)
+	
+	# Connect HUD action requests
+	hud.restart_requested.connect(_on_hud_restart)
+	hud.undo_requested.connect(_on_hud_undo)
 
 func _on_move_requested(direction: Vector2i) -> void:
 	# Capture the pre-move state and save it to the history stack
@@ -40,13 +45,13 @@ func _on_move_requested(direction: Vector2i) -> void:
 		# Update visuals instantly
 		level_view.snap_to_state(model)
 		
-		# Check for victory or game over conditions
+		# Show HUD popups for win/loss instead of instantly resetting
 		if model.victory:
 			print("VICTORY! Level completed successfully!")
-			_restart_level()
+			hud.show_victory()
 		elif model.game_over:
 			print("BREACHED! Game Over!")
-			_restart_level()
+			hud.show_breach()
 
 func _on_undo_requested() -> void:
 	if history.can_undo():
@@ -57,6 +62,7 @@ func _on_undo_requested() -> void:
 		# Apply previous state
 		model.deserialize_state(previous_state)
 		level_view.snap_to_state(model)
+		hud.hide_popup() # Hide popup since we've rewound to safety
 		print("Undo executed. Player back at: ", model.admin_pos)
 	else:
 		print("Undo stack empty.")
@@ -70,9 +76,25 @@ func _on_redo_requested() -> void:
 		# Apply next state
 		model.deserialize_state(next_state)
 		level_view.snap_to_state(model)
+		
+		# Re-evaluate popup state based on redo state
+		if model.victory:
+			hud.show_victory()
+		elif model.game_over:
+			hud.show_breach()
+		else:
+			hud.hide_popup()
+			
 		print("Redo executed. Player forward at: ", model.admin_pos)
 	else:
 		print("Redo stack empty.")
+
+func _on_hud_restart() -> void:
+	_restart_level()
+	hud.hide_popup()
+
+func _on_hud_undo() -> void:
+	_on_undo_requested()
 
 func _restart_level() -> void:
 	# Reset history and reload level model and view layouts
