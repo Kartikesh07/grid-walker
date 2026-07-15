@@ -1,5 +1,8 @@
 extends Node2D
 
+# Signal for player movement request
+signal move_requested(direction: Vector2i)
+
 const TILE_SIZE: float = 80.0
 
 # Color Palette (Neon Cyberpunk)
@@ -15,12 +18,16 @@ const COLOR_ADMIN = Color("39ff14") # Neon green
 const COLOR_ZOMBIE = Color("ff3131") # Neon red
 const COLOR_EMP = Color("b5a642") # Neon gold/yellow
 const COLOR_EMP_BORDER = Color("ffff33") # Neon gold border
-const COLOR_ZOMBIE_FROZEN = Color("33ccff") # Neon blue freeze
 
 # Grid specifications
 var grid_width: int = 5
 var grid_height: int = 5
 var grid_origin: Vector2 = Vector2.ZERO
+
+# Input gestures for swipes
+var touch_start_pos: Vector2 = Vector2.ZERO
+var is_dragging: bool = false
+const SWIPE_THRESHOLD: float = 50.0
 
 # Node references
 var admin_sprite: ColorRect = null
@@ -96,6 +103,18 @@ func clear_visuals() -> void:
 		node.queue_free()
 	emp_nodes.clear()
 
+func snap_to_state(model: GridModel) -> void:
+	# Instantly snap the Player node
+	if admin_sprite:
+		admin_sprite.position = grid_to_pixel(model.admin_pos)
+			
+	# Re-sync Zombie nodes (they could have moved)
+	for node in zombie_nodes.values():
+		node.queue_free()
+	zombie_nodes.clear()
+	for z_pos in model.zombie_positions:
+		create_zombie_visual(z_pos)
+
 func create_emp_visual(grid_pos: Vector2i) -> void:
 	var rect = create_tile_rect(grid_pos, COLOR_EMP, COLOR_EMP_BORDER, 2.0)
 	var inner = ColorRect.new()
@@ -167,3 +186,57 @@ func _draw() -> void:
 		var start = grid_origin + Vector2(0, y * TILE_SIZE)
 		var end = grid_origin + Vector2(grid_total_width, y * TILE_SIZE)
 		draw_line(start, end, COLOR_GRID_LINE, 2.0)
+
+func _unhandled_input(event: InputEvent) -> void:
+	# 1. Keyboard Movement (Arrow Keys & WASD)
+	if event is InputEventKey and event.pressed:
+		var dir = Vector2i.ZERO
+		if event.is_action_pressed("ui_up") or event.keycode == KEY_W:
+			dir = Vector2i.UP
+		elif event.is_action_pressed("ui_down") or event.keycode == KEY_S:
+			dir = Vector2i.DOWN
+		elif event.is_action_pressed("ui_left") or event.keycode == KEY_A:
+			dir = Vector2i.LEFT
+		elif event.is_action_pressed("ui_right") or event.keycode == KEY_D:
+			dir = Vector2i.RIGHT
+			
+		if dir != Vector2i.ZERO:
+			move_requested.emit(dir)
+			
+	# 2. Mouse Drag (Desktop Browser testing)
+	elif event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				touch_start_pos = event.position
+				is_dragging = true
+			elif is_dragging:
+				var swipe_vector = event.position - touch_start_pos
+				if swipe_vector.length() >= SWIPE_THRESHOLD:
+					process_swipe(swipe_vector)
+				is_dragging = false
+				
+	# 3. Touch Screen Drag (Mobile device native testing)
+	elif event is InputEventScreenTouch:
+		if event.pressed:
+			touch_start_pos = event.position
+		else:
+			var swipe_vector = event.position - touch_start_pos
+			if swipe_vector.length() >= SWIPE_THRESHOLD:
+				process_swipe(swipe_vector)
+
+func process_swipe(swipe_vector: Vector2) -> void:
+	var dir = Vector2i.ZERO
+	# Check if horizontal swipe is larger than vertical swipe
+	if abs(swipe_vector.x) > abs(swipe_vector.y):
+		if swipe_vector.x < 0:
+			dir = Vector2i.LEFT
+		else:
+			dir = Vector2i.RIGHT
+	else:
+		if swipe_vector.y < 0:
+			dir = Vector2i.UP
+		else:
+			dir = Vector2i.DOWN
+			
+	if dir != Vector2i.ZERO:
+		move_requested.emit(dir)

@@ -20,3 +20,13 @@ func _ready() -> void:
 	
 	# Initialize visual view
 	level_view.setup(model)
+	
+	# Connect view input signal
+	level_view.move_requested.connect(_on_move_requested)
+
+func _on_move_requested(direction: Vector2i) -> void:
+	var report = model.move(direction)
+	if report["success"]:
+		print("Player moved to: ", model.admin_pos)
+		# Update visuals instantly
+		level_view.snap_to_state(model)
