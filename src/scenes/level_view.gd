@@ -1,7 +1,9 @@
 extends Node2D
 
-# Signal for player movement request
+# Signals for player actions
 signal move_requested(direction: Vector2i)
+signal undo_requested()
+signal redo_requested()
 
 const TILE_SIZE: float = 80.0
 
@@ -188,8 +190,15 @@ func _draw() -> void:
 		draw_line(start, end, COLOR_GRID_LINE, 2.0)
 
 func _unhandled_input(event: InputEvent) -> void:
-	# 1. Keyboard Movement (Arrow Keys & WASD)
+	# 1. Keyboard Movement & History Controls
 	if event is InputEventKey and event.pressed:
+		if event.keycode == KEY_Z:
+			undo_requested.emit()
+			return
+		elif event.keycode == KEY_Y:
+			redo_requested.emit()
+			return
+			
 		var dir = Vector2i.ZERO
 		if event.is_action_pressed("ui_up") or event.keycode == KEY_W:
 			dir = Vector2i.UP
