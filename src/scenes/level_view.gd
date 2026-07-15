@@ -109,6 +109,9 @@ func snap_to_state(model: GridModel) -> void:
 	# Instantly snap the Player node
 	if admin_sprite:
 		admin_sprite.position = grid_to_pixel(model.admin_pos)
+		
+	# Sync Exit Portal state visually
+	update_exit_portal(model.exit_unlocked)
 			
 	# Re-sync Zombie nodes (they could have moved)
 	for node in zombie_nodes:

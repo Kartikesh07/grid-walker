@@ -39,6 +39,11 @@ func _on_move_requested(direction: Vector2i) -> void:
 		print("Player moved to: ", model.admin_pos)
 		# Update visuals instantly
 		level_view.snap_to_state(model)
+		
+		# Check for victory conditions
+		if model.victory:
+			print("VICTORY! Level completed successfully!")
+			_restart_level()
 
 func _on_undo_requested() -> void:
 	if history.can_undo():
@@ -65,3 +70,9 @@ func _on_redo_requested() -> void:
 		print("Redo executed. Player forward at: ", model.admin_pos)
 	else:
 		print("Redo stack empty.")
+
+func _restart_level() -> void:
+	# Reset history and reload level model and view layouts
+	history.clear()
+	model.initialize(current_level_data)
+	level_view.setup(model)

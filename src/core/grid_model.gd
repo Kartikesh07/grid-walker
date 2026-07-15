@@ -14,7 +14,11 @@ var wall_positions: Array = []
 var gc_positions: Array = []
 var emp_positions: Array = []
 var exit_pos: Vector2i = Vector2i.ZERO
-var exit_unlocked: bool = false # Statically locked for now
+
+# Game states
+var exit_unlocked: bool = false
+var victory: bool = false
+var game_over: bool = false
 
 # Initialize from LevelData (Loading all layouts)
 func initialize(level_data: Resource) -> void:
@@ -26,7 +30,10 @@ func initialize(level_data: Resource) -> void:
 	gc_positions = level_data.gc_tile_positions.duplicate()
 	emp_positions = level_data.emp_start_positions.duplicate()
 	exit_pos = level_data.exit_position
-	exit_unlocked = false
+	
+	exit_unlocked = zombie_positions.is_empty()
+	victory = false
+	game_over = false
 
 # Move turn: moves player and moves all zombies (blocked by walls/edges only)
 func move(direction: Vector2i) -> Dictionary:
@@ -35,8 +42,15 @@ func move(direction: Vector2i) -> Dictionary:
 		"admin_old": admin_pos,
 		"admin_new": admin_pos,
 		"zombies_old": zombie_positions.duplicate(),
-		"zombies_new": zombie_positions.duplicate()
+		"zombies_new": zombie_positions.duplicate(),
+		"victory": victory,
+		"game_over": game_over,
+		"exit_unlocked": exit_unlocked
 	}
+	
+	# If game is already won or lost, block any further moves
+	if victory or game_over:
+		return report
 	
 	# 1. Validate Player proposed move (blocked by walls or grid edges)
 	var proposed_admin_pos = admin_pos + direction
@@ -90,7 +104,18 @@ func move(direction: Vector2i) -> Dictionary:
 			surviving_zombies.append(z_pos)
 	zombie_positions = surviving_zombies
 	
+	# 4. Check Exit Portal unlock state
+	exit_unlocked = zombie_positions.is_empty()
+	
+	# 5. Check Victory conditions (Stepping on unlocked exit)
+	if admin_pos == exit_pos and exit_unlocked:
+		victory = true
+		print("Victory achieved in model!")
+		
 	report["zombies_new"] = zombie_positions.duplicate()
+	report["exit_unlocked"] = exit_unlocked
+	report["victory"] = victory
+	report["game_over"] = game_over
 	
 	return report
 
@@ -104,7 +129,9 @@ func serialize_state() -> Dictionary:
 		"admin_pos": admin_pos,
 		"zombie_positions": zombie_positions.duplicate(),
 		"emp_positions": emp_positions.duplicate(),
-		"exit_unlocked": exit_unlocked
+		"exit_unlocked": exit_unlocked,
+		"victory": victory,
+		"game_over": game_over
 	}
 
 # Simple deserialization for history management
@@ -113,3 +140,5 @@ func deserialize_state(state: Dictionary) -> void:
 	zombie_positions = state["zombie_positions"].duplicate()
 	emp_positions = state["emp_positions"].duplicate()
 	exit_unlocked = state["exit_unlocked"]
+	victory = state["victory"]
+	game_over = state["game_over"]
