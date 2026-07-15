@@ -21,6 +21,10 @@ var victory: bool = false
 var game_over: bool = false
 var emp_active_turns: int = 0
 
+# Cycle limits
+var max_cycles: int = 15
+var remaining_cycles: int = 15
+
 # Initialize from LevelData (Loading all layouts)
 func initialize(level_data: Resource) -> void:
 	width = level_data.width
@@ -36,6 +40,10 @@ func initialize(level_data: Resource) -> void:
 	victory = false
 	game_over = false
 	emp_active_turns = 0
+	
+	# Load cycle constraints
+	max_cycles = level_data.max_cycles
+	remaining_cycles = max_cycles
 
 # Move turn: moves player and moves all zombies (blocked by walls/edges only)
 func move(direction: Vector2i) -> Dictionary:
@@ -48,11 +56,12 @@ func move(direction: Vector2i) -> Dictionary:
 		"victory": victory,
 		"game_over": game_over,
 		"exit_unlocked": exit_unlocked,
-		"emp_active_turns": emp_active_turns
+		"emp_active_turns": emp_active_turns,
+		"remaining_cycles": remaining_cycles
 	}
 	
 	# If game is already won or lost, block any further moves
-	if victory or game_over:
+	if victory or game_over or remaining_cycles <= 0:
 		return report
 	
 	# 1. Validate Player proposed move (blocked by walls or grid edges)
@@ -65,6 +74,9 @@ func move(direction: Vector2i) -> Dictionary:
 	var old_admin_pos = admin_pos
 	admin_pos = proposed_admin_pos
 	report["admin_new"] = admin_pos
+	
+	# Deduct turn cycle
+	remaining_cycles -= 1
 	
 	# 2. Move Zombies (Mirrored direction unless EMP freeze is active)
 	var old_zombies = zombie_positions.duplicate()
@@ -134,6 +146,11 @@ func move(direction: Vector2i) -> Dictionary:
 				print("Breach detected: Swapping collision!")
 				break
 	
+	# 3.9 Check if player ran out of moves (if not already game_over/victory)
+	if not game_over and remaining_cycles <= 0:
+		game_over = true
+		print("Breach detected: Exceeded cycle limits!")
+	
 	# 4. Check Exit Portal unlock state
 	exit_unlocked = zombie_positions.is_empty()
 	
@@ -147,6 +164,7 @@ func move(direction: Vector2i) -> Dictionary:
 	report["victory"] = victory
 	report["game_over"] = game_over
 	report["emp_active_turns"] = emp_active_turns
+	report["remaining_cycles"] = remaining_cycles
 	
 	return report
 
@@ -163,7 +181,8 @@ func serialize_state() -> Dictionary:
 		"exit_unlocked": exit_unlocked,
 		"victory": victory,
 		"game_over": game_over,
-		"emp_active_turns": emp_active_turns
+		"emp_active_turns": emp_active_turns,
+		"remaining_cycles": remaining_cycles
 	}
 
 # Simple deserialization for history management
@@ -175,3 +194,4 @@ func deserialize_state(state: Dictionary) -> void:
 	victory = state["victory"]
 	game_over = state["game_over"]
 	emp_active_turns = state["emp_active_turns"]
+	remaining_cycles = state["remaining_cycles"]

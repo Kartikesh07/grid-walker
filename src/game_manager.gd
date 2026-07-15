@@ -34,7 +34,7 @@ func _ready() -> void:
 	hud.undo_requested.connect(_on_hud_undo)
 	hud.redo_requested.connect(_on_hud_redo)
 	
-	# Initialize HUD button states
+	# Initialize HUD button and cycle states
 	_update_hud_states()
 
 func _on_move_requested(direction: Vector2i) -> void:
@@ -57,7 +57,7 @@ func _on_move_requested(direction: Vector2i) -> void:
 			print("BREACHED! Game Over!")
 			hud.show_breach()
 		else:
-			# Update buttons for normal play
+			# Update buttons and cycles count for normal play
 			_update_hud_states()
 
 func _on_undo_requested() -> void:
@@ -115,6 +115,7 @@ func _restart_level() -> void:
 	level_view.setup(model)
 	_update_hud_states()
 
-# Refreshes the persistent HUD button states based on history availability
+# Refreshes the persistent HUD buttons and step counters based on current model history values
 func _update_hud_states() -> void:
 	hud.update_history_buttons(history.can_undo(), history.can_redo())
+	hud.update_cycles(model.remaining_cycles, model.max_cycles)

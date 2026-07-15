@@ -13,6 +13,7 @@ signal redo_requested()
 # Persistent HUD nodes
 @onready var undo_hud_button: Button = $ControlButtons/UndoHUDButton
 @onready var redo_hud_button: Button = $ControlButtons/RedoHUDButton
+@onready var cycles_label: Label = $CyclesLabel
 
 # Color presets for popup borders
 const COLOR_VICTORY_BORDER = Color("39ff14") # Neon green
@@ -44,6 +45,11 @@ func show_breach() -> void:
 
 func hide_popup() -> void:
 	popup.hide()
+
+# Updates the cycles count label text
+func update_cycles(remaining: int, max_val: int) -> void:
+	if cycles_label:
+		cycles_label.text = "CYCLES: " + str(remaining) + " / " + str(max_val)
 
 # Updates the button enabled/disabled states based on historical stack sizes
 func update_history_buttons(can_undo: bool, can_redo: bool) -> void:
