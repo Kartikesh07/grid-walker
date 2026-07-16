@@ -61,7 +61,7 @@ func move(direction: Vector2i) -> Dictionary:
 	}
 	
 	# If game is already won or lost, block any further moves
-	if victory or game_over:
+	if victory or game_over or remaining_cycles <= 0:
 		return report
 	
 	# 1. Validate Player proposed move (blocked by walls or grid edges)
@@ -146,10 +146,10 @@ func move(direction: Vector2i) -> Dictionary:
 				print("Breach detected: Swapping collision!")
 				break
 	
-	# 3.9 Check if player ran out of moves (if not already game_over/victory) - DISABLED FOR TESTING
-	# if not game_over and remaining_cycles <= 0:
-	# 	game_over = true
-	# 	print("Breach detected: Exceeded cycle limits!")
+	# 3.9 Check if player ran out of moves (if not already game_over/victory)
+	if not game_over and remaining_cycles <= 0:
+		game_over = true
+		print("Breach detected: Exceeded cycle limits!")
 	
 	# 4. Check Exit Portal unlock state
 	exit_unlocked = zombie_positions.is_empty()
