@@ -48,6 +48,7 @@ func _ready() -> void:
 	hud.restart_requested.connect(_on_hud_restart)
 	hud.undo_requested.connect(_on_hud_undo)
 	hud.redo_requested.connect(_on_hud_redo)
+	hud.home_requested.connect(_on_hud_home)
 	
 	# Initialize HUD button and cycle states
 	_update_hud_states()
@@ -143,6 +144,11 @@ func _on_hud_undo() -> void:
 
 func _on_hud_redo() -> void:
 	_on_redo_requested()
+
+func _on_hud_home() -> void:
+	play_sfx(STREAM_BUTTON_CLICK)
+	await get_tree().create_timer(0.15).timeout
+	get_tree().change_scene_to_file("res://title_menu.tscn")
 
 func _restart_level() -> void:
 	# Reset history and reload level model and view layouts

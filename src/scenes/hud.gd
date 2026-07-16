@@ -3,16 +3,19 @@ extends CanvasLayer
 signal restart_requested()
 signal undo_requested()
 signal redo_requested()
+signal home_requested() # Emitted when player wants to return to Title Menu
 
 # Popup nodes
 @onready var popup: Panel = $GameEndPopup
 @onready var title_label: Label = $GameEndPopup/TitleLabel
 @onready var restart_button: Button = $GameEndPopup/RestartButton
 @onready var undo_button: Button = $GameEndPopup/UndoButton
+@onready var home_popup_button: Button = %HomePopupButton
 
 # Persistent HUD nodes
 @onready var undo_hud_button: Button = $ControlButtons/UndoHUDButton
 @onready var redo_hud_button: Button = $ControlButtons/RedoHUDButton
+@onready var home_hud_button: Button = %HomeHUDButton
 @onready var cycles_label: Label = $CyclesLabel
 
 # Color presets for popup borders
@@ -26,10 +29,14 @@ func _ready() -> void:
 	# Connect popup buttons
 	restart_button.pressed.connect(func(): restart_requested.emit())
 	undo_button.pressed.connect(func(): undo_requested.emit())
+	if home_popup_button:
+		home_popup_button.pressed.connect(func(): home_requested.emit())
 	
 	# Connect persistent bottom HUD buttons
 	undo_hud_button.pressed.connect(func(): undo_requested.emit())
 	redo_hud_button.pressed.connect(func(): redo_requested.emit())
+	if home_hud_button:
+		home_hud_button.pressed.connect(func(): home_requested.emit())
 
 func show_victory() -> void:
 	title_label.text = "SYSTEM CLEANSED"
@@ -57,9 +64,13 @@ func update_history_buttons(can_undo: bool, can_redo: bool) -> void:
 		# Lock background buttons if victory/loss overlay is shown
 		undo_hud_button.disabled = true
 		redo_hud_button.disabled = true
+		if home_hud_button:
+			home_hud_button.disabled = true
 	else:
 		undo_hud_button.disabled = not can_undo
 		redo_hud_button.disabled = not can_redo
+		if home_hud_button:
+			home_hud_button.disabled = false
 
 # Helper to dynamically update the border color of the panel's flat StyleBox
 func set_popup_border_color(color: Color) -> void:
