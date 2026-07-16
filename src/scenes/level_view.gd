@@ -5,7 +5,8 @@ signal move_requested(direction: Vector2i)
 signal undo_requested()
 signal redo_requested()
 
-const TILE_SIZE: float = 80.0
+# Swapped const to dynamic var for screen auto-scaling
+var tile_size: float = 80.0
 
 # Preload Unity-style Particle Prefabs (Scenes)
 const GC_EXPLOSION_SCENE = preload("res://src/scenes/gc_explosion.tscn")
@@ -77,7 +78,7 @@ func setup(model: GridModel) -> void:
 	admin_sprite = create_tile_rect(model.admin_pos, COLOR_ADMIN, Color.WHITE, 2.0)
 	var admin_inner = ColorRect.new()
 	admin_inner.color = Color("051a02")
-	admin_inner.size = Vector2(TILE_SIZE * 0.4, TILE_SIZE * 0.4)
+	admin_inner.size = Vector2(tile_size * 0.4, tile_size * 0.4)
 	admin_inner.position = (admin_sprite.size - admin_inner.size) / 2.0
 	admin_sprite.add_child(admin_inner)
 	add_child(admin_sprite)
@@ -164,7 +165,7 @@ func snap_to_state(model: GridModel, direction: Vector2i = Vector2i.ZERO) -> voi
 				fade_tween.tween_property(node, "modulate:a", 0.0, 0.15)
 				
 				# Instantiate and trigger GC explosion particle scene
-				spawn_one_shot(GC_EXPLOSION_SCENE, target_pixel + Vector2(TILE_SIZE/2, TILE_SIZE/2))
+				spawn_one_shot(GC_EXPLOSION_SCENE, target_pixel + Vector2(tile_size/2, tile_size/2))
 				
 				# Free the node after slide ends
 				var callback_tween = create_tween()
@@ -194,7 +195,7 @@ func snap_to_state(model: GridModel, direction: Vector2i = Vector2i.ZERO) -> voi
 			emp_nodes.erase(emp_pos)
 			
 			# Instantiate and trigger EMP Sparks particle scene
-			spawn_one_shot(EMP_SPARKS_SCENE, node.position + Vector2(TILE_SIZE/2, TILE_SIZE/2))
+			spawn_one_shot(EMP_SPARKS_SCENE, node.position + Vector2(tile_size/2, tile_size/2))
 			
 			var fade_tween = create_tween()
 			fade_tween.tween_property(node, "modulate:a", 0.0, 0.15)
@@ -213,7 +214,7 @@ func create_emp_visual(grid_pos: Vector2i) -> void:
 	var rect = create_tile_rect(grid_pos, COLOR_EMP, COLOR_EMP_BORDER, 2.0)
 	var inner = ColorRect.new()
 	inner.color = Color("252202")
-	inner.size = Vector2(TILE_SIZE * 0.3, TILE_SIZE * 0.3)
+	inner.size = Vector2(tile_size * 0.3, tile_size * 0.3)
 	inner.position = (rect.size - inner.size) / 2.0
 	rect.add_child(inner)
 	add_child(rect)
@@ -223,7 +224,7 @@ func create_zombie_visual(grid_pos: Vector2i) -> ColorRect:
 	var rect = create_tile_rect(grid_pos, COLOR_ZOMBIE, Color.WHITE, 2.0)
 	var inner = ColorRect.new()
 	inner.color = Color("230000")
-	inner.size = Vector2(TILE_SIZE * 0.4, TILE_SIZE * 0.4)
+	inner.size = Vector2(tile_size * 0.4, tile_size * 0.4)
 	inner.position = (rect.size - inner.size) / 2.0
 	rect.add_child(inner)
 	add_child(rect)
@@ -251,7 +252,7 @@ func update_exit_portal(unlocked: bool) -> void:
 
 func create_tile_rect(grid_pos: Vector2i, fill_color: Color, border_color: Color, border_width: float) -> ColorRect:
 	var rect = ColorRect.new()
-	rect.size = Vector2(TILE_SIZE - 4, TILE_SIZE - 4) # Padding of 2px on each side
+	rect.size = Vector2(tile_size - 4, tile_size - 4) # Padding of 2px on each side
 	rect.position = grid_to_pixel(grid_pos)
 	rect.color = border_color
 	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -268,25 +269,41 @@ func create_tile_rect(grid_pos: Vector2i, fill_color: Color, border_color: Color
 
 func recalculate_layout() -> void:
 	var viewport_size = get_viewport_rect().size
-	var grid_total_width = grid_width * TILE_SIZE
-	var grid_total_height = grid_height * TILE_SIZE
+	
+	# Calculate dynamic tile size to fit viewport with 20px padding on left/right
+	# and 300px total top/bottom margin for HUD/buttons.
+	var max_tile_w = (viewport_size.x - 40.0) / grid_width
+	var max_tile_h = (viewport_size.y - 300.0) / grid_height
+	tile_size = min(max_tile_w, max_tile_h)
+	
+	# Cap tile size at 80.0 so small grids don't look excessively large
+	if tile_size > 80.0:
+		tile_size = 80.0
+		
+	var grid_total_width = grid_width * tile_size
+	var grid_total_height = grid_height * tile_size
 	# Calculate origin to center the grid
 	grid_origin = (viewport_size - Vector2(grid_total_width, grid_total_height)) / 2.0
 
 func grid_to_pixel(grid_pos: Vector2i) -> Vector2:
-	return grid_origin + Vector2(grid_pos.x * TILE_SIZE + 2, grid_pos.y * TILE_SIZE + 2)
+	return grid_origin + Vector2(grid_pos.x * tile_size + 2, grid_pos.y * tile_size + 2)
 
 # Converts a pixel coordinate position back to its logical Vector2i grid position
 func pixel_to_grid(pixel_pos: Vector2) -> Vector2i:
 	var local_pos = pixel_pos - grid_origin - Vector2(2, 2)
-	var x = round(local_pos.x / TILE_SIZE)
-	var y = round(local_pos.y / TILE_SIZE)
+	var x = round(local_pos.x / tile_size)
+	var y = round(local_pos.y / tile_size)
 	return Vector2i(x, y)
 
 # Helper to instantiate a preloaded particle scene prefab, play it, and auto-delete
 func spawn_one_shot(scene: PackedScene, global_pos: Vector2) -> void:
 	var particles = scene.instantiate() as CPUParticles2D
 	particles.position = global_pos
+	
+	# Scale particle sizes dynamically to match current tile_size
+	var scale_factor = tile_size / 80.0
+	particles.scale = Vector2(scale_factor, scale_factor)
+	
 	add_child(particles)
 	particles.emitting = true
 	
@@ -296,21 +313,21 @@ func spawn_one_shot(scene: PackedScene, global_pos: Vector2) -> void:
 
 func _draw() -> void:
 	# Draw main grid container background
-	var grid_total_width = grid_width * TILE_SIZE
-	var grid_total_height = grid_height * TILE_SIZE
+	var grid_total_width = grid_width * tile_size
+	var grid_total_height = grid_height * tile_size
 	
 	# Solid dark background for the matrix area
 	draw_rect(Rect2(grid_origin, Vector2(grid_total_width, grid_total_height)), COLOR_BG, true)
 	
 	# Draw cells and grid lines
 	for x in range(grid_width + 1):
-		var start = grid_origin + Vector2(x * TILE_SIZE, 0)
-		var end = grid_origin + Vector2(x * TILE_SIZE, grid_total_height)
+		var start = grid_origin + Vector2(x * tile_size, 0)
+		var end = grid_origin + Vector2(x * tile_size, grid_total_height)
 		draw_line(start, end, COLOR_GRID_LINE, 2.0)
 		
 	for y in range(grid_height + 1):
-		var start = grid_origin + Vector2(0, y * TILE_SIZE)
-		var end = grid_origin + Vector2(grid_total_width, y * TILE_SIZE)
+		var start = grid_origin + Vector2(0, y * tile_size)
+		var end = grid_origin + Vector2(grid_total_width, y * tile_size)
 		draw_line(start, end, COLOR_GRID_LINE, 2.0)
 
 func _unhandled_input(event: InputEvent) -> void:
