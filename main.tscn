@@ -146,6 +146,17 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_mktl6")
 theme_override_styles/hover = SubResource("StyleBoxFlat_j7f80")
 text = "UNDO MOVE"
 
+[node name="HomePopupButton" type="Button" parent="HUD/GameEndPopup" unique_id=904197624]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 110.0
+offset_top = 200.0
+offset_right = 250.0
+offset_bottom = 231.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_mktl6")
+theme_override_styles/hover = SubResource("StyleBoxFlat_j7f80")
+text = "MAIN MENU"
+
 [node name="ControlButtons" type="HBoxContainer" parent="HUD" unique_id=589366216]
 anchors_preset = 7
 anchor_left = 0.5
@@ -190,3 +201,13 @@ theme_override_font_sizes/font_size = 20
 text = "CYCLES: 15 / 15"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="HomeHUDButton" type="Button" parent="HUD" unique_id=57828984]
+unique_name_in_owner = true
+offset_left = 20.0
+offset_top = 40.0
+offset_right = 110.0
+offset_bottom = 80.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_arwa0")
+theme_override_styles/hover = SubResource("StyleBoxFlat_j3rxf")
+text = "HOME"
