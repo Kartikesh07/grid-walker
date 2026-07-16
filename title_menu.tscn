@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://dmq4re613xff5"]
 
 [ext_resource type="Script" uid="uid://dpn7gwdj4hwis" path="res://src/scenes/title_menu.gd" id="1_cgpkj"]
+[ext_resource type="FontFile" uid="uid://k6fsar40k6gh" path="res://Fonts/ShareTechMono-Regular.ttf" id="2_w37us"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_w37us"]
 bg_color = Color(0.023529412, 0.09411765, 0.011764706, 1)
@@ -50,6 +51,40 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
+[sub_resource type="Animation" id="Animation_mgd1j"]
+resource_name = "pulse_glow"
+length = 2.0
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Title:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1, 2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(127.5, 300), Vector2(127.5, 290), Vector2(127.5, 300)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Title:modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 1, 2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(0, 0.9411765, 1, 1), Color(1, 1, 1, 1), Color(0, 0.9411765, 1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_f2vs7"]
+_data = {
+&"pulse_glow": SubResource("Animation_mgd1j")
+}
+
 [node name="TitleMenu" type="Control" unique_id=16565927]
 layout_mode = 3
 anchors_preset = 15
@@ -80,6 +115,8 @@ custom_minimum_size = Vector2(240, 50)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.22352941, 1, 0.078431375, 1)
 theme_override_colors/font_hover_color = Color(0.039215688, 0.039215688, 0.08627451, 1)
+theme_override_fonts/font = ExtResource("2_w37us")
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxFlat_w37us")
 theme_override_styles/hover = SubResource("StyleBoxFlat_mgd1j")
 text = "INITIALIZE WALK"
@@ -90,6 +127,33 @@ custom_minimum_size = Vector2(240, 50)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.19215687, 0.19215687, 1)
 theme_override_colors/font_hover_color = Color(0.039215688, 0.039215688, 0.08627451, 1)
+theme_override_fonts/font = ExtResource("2_w37us")
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxFlat_f2vs7")
 theme_override_styles/hover = SubResource("StyleBoxFlat_y7hm8")
 text = "DISCONNECT"
+
+[node name="Title" type="Label" parent="." unique_id=82735332]
+modulate = Color(0, 0.9411765, 1, 1)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -142.5
+offset_top = -180.0
+offset_right = 142.5
+offset_bottom = -125.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0, 0.9411765, 1, 1)
+theme_override_fonts/font = ExtResource("2_w37us")
+theme_override_font_sizes/font_size = 48
+text = "Grid Walker"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=485983223]
+libraries/ = SubResource("AnimationLibrary_f2vs7")
+autoplay = &"pulse_glow"
