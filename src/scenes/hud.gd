@@ -3,13 +3,15 @@ extends CanvasLayer
 signal restart_requested()
 signal undo_requested()
 signal redo_requested()
-signal home_requested() # Emitted when player wants to return to Title Menu
+signal home_requested()
+signal next_level_requested() # Emitted when the player clicks Next Level
 
 # Popup nodes
 @onready var popup: Panel = $GameEndPopup
 @onready var title_label: Label = $GameEndPopup/TitleLabel
 @onready var restart_button: Button = $GameEndPopup/RestartButton
 @onready var undo_button: Button = $GameEndPopup/UndoButton
+@onready var next_button: Button = %NextButton
 @onready var home_popup_button: Button = %HomePopupButton
 
 # Persistent HUD nodes
@@ -29,6 +31,8 @@ func _ready() -> void:
 	# Connect popup buttons
 	restart_button.pressed.connect(func(): restart_requested.emit())
 	undo_button.pressed.connect(func(): undo_requested.emit())
+	if next_button:
+		next_button.pressed.connect(func(): next_level_requested.emit())
 	if home_popup_button:
 		home_popup_button.pressed.connect(func(): home_requested.emit())
 	
@@ -41,12 +45,26 @@ func _ready() -> void:
 func show_victory() -> void:
 	title_label.text = "SYSTEM CLEANSED"
 	set_popup_border_color(COLOR_VICTORY_BORDER)
+	
+	# Show Next Level button, hide Undo button on Win
+	if next_button:
+		next_button.show()
+	if undo_button:
+		undo_button.hide()
+		
 	popup.show()
 	update_history_buttons(false, false)
 
 func show_breach() -> void:
 	title_label.text = "SECURITY COMPROMISED"
 	set_popup_border_color(COLOR_BREACH_BORDER)
+	
+	# Hide Next Level button, show Undo button on Loss
+	if next_button:
+		next_button.hide()
+	if undo_button:
+		undo_button.show()
+		
 	popup.show()
 	update_history_buttons(false, false)
 

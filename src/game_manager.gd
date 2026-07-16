@@ -3,12 +3,20 @@ extends Node
 const GridModelClass = preload("res://src/core/grid_model.gd")
 const LevelDataClass = preload("res://src/core/level_data.gd")
 
+# Level files registry
+const LEVELS: Array[String] = [
+	"res://level_1.tres",
+	"res://level_2.tres",
+	"res://level_3.tres"
+]
+var current_level_index: int = 0
+
 # Audio assets preloads
 const STREAM_BG_MUSIC = preload("res://Music/BackgrounMusic2.mp3")
 const STREAM_BUTTON_CLICK = preload("res://Music/ButtonClick.wav")
 const STREAM_EMP = preload("res://Music/EMP.wav")
 const STREAM_FAILURE = preload("res://Music/Faillure.wav")
-const STREAM_MOVE = preload("res://Music/Move2.wav") # Swapped to Move2.wav
+const STREAM_MOVE = preload("res://Music/Move2.wav")
 const STREAM_VICTORY = preload("res://Music/Victory.wav")
 
 # Expose volume settings to Godot Inspector for easy customization
@@ -30,8 +38,8 @@ func _ready() -> void:
 	model = GridModelClass.new()
 	history = HistoryManager.new()
 	
-	# Load level config
-	current_level_data = load("res://level_1.tres") as LevelData
+	# Load level config dynamically based on current index
+	current_level_data = load(LEVELS[current_level_index]) as LevelData
 	
 	# Initialize the logic model
 	model.initialize(current_level_data)
@@ -49,6 +57,7 @@ func _ready() -> void:
 	hud.undo_requested.connect(_on_hud_undo)
 	hud.redo_requested.connect(_on_hud_redo)
 	hud.home_requested.connect(_on_hud_home)
+	hud.next_level_requested.connect(_on_hud_next_level)
 	
 	# Initialize HUD button and cycle states
 	_update_hud_states()
@@ -149,6 +158,21 @@ func _on_hud_home() -> void:
 	play_sfx(STREAM_BUTTON_CLICK)
 	await get_tree().create_timer(0.15).timeout
 	get_tree().change_scene_to_file("res://title_menu.tscn")
+
+func _on_hud_next_level() -> void:
+	play_sfx(STREAM_BUTTON_CLICK)
+	current_level_index += 1
+	if current_level_index < LEVELS.size():
+		# Load next level config and reset/re-initialize views
+		current_level_data = load(LEVELS[current_level_index]) as LevelData
+		_restart_level()
+		hud.hide_popup()
+		print("Loaded Level Index: ", current_level_index + 1)
+	else:
+		# Completed all levels! Reset index and return to main menu
+		print("All levels completed! Returning to Main Menu.")
+		current_level_index = 0
+		get_tree().change_scene_to_file("res://title_menu.tscn")
 
 func _restart_level() -> void:
 	# Reset history and reload level model and view layouts
