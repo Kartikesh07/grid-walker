@@ -7,7 +7,7 @@ Grid Walker is a polished, cyberpunk-themed mobile portrait puzzle game built us
 ## 🎮 Core Game Loop & Gameplay Hooks
 The player controls the green **Admin Node** with the goal of reaching the magenta **Exit Portal** before running out of **cycles (steps)**.
 
-### 💡 Candidate Initiative (Mechanics & Hooks)
+### 💡 Mechanics and Hooks
 To elevate engagement, Grid Walker features three custom gameplay obstacles and power-ups:
 1.  **Mirrored Threat AI (Zombies)**: Active red threat nodes mirror the player's inputs in reverse. Collision with threats results in a security breach (Game Over).
 2.  **Garbage Collection (GC) Hazards**: Cyan hazard tiles delete threats that step onto them. **The Exit Portal remains locked until all active threats are deleted** from the system matrix.
