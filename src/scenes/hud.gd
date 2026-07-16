@@ -42,8 +42,16 @@ func _ready() -> void:
 	if home_hud_button:
 		home_hud_button.pressed.connect(func(): home_requested.emit())
 
-func show_victory() -> void:
-	title_label.text = "SYSTEM CLEANSED"
+func show_victory(is_last_level: bool = false) -> void:
+	if is_last_level:
+		title_label.text = "CAMPAIGN COMPLETED"
+		if next_button:
+			next_button.text = "BACK TO LEVEL 1"
+	else:
+		title_label.text = "SYSTEM CLEANSED"
+		if next_button:
+			next_button.text = "NEXT LEVEL"
+			
 	set_popup_border_color(COLOR_VICTORY_BORDER)
 	
 	# Show Next Level button, hide Undo button on Win

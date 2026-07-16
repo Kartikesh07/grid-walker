@@ -85,7 +85,8 @@ func _on_move_requested(direction: Vector2i) -> void:
 		if model.victory:
 			print("VICTORY! Level completed successfully!")
 			play_sfx(STREAM_VICTORY)
-			hud.show_victory()
+			var is_last = (current_level_index == LEVELS.size() - 1)
+			hud.show_victory(is_last)
 		elif model.game_over:
 			print("BREACHED! Game Over!")
 			play_sfx(STREAM_FAILURE)
@@ -131,7 +132,8 @@ func _on_redo_requested() -> void:
 		# Re-evaluate popup state based on redo state
 		if model.victory:
 			play_sfx(STREAM_VICTORY)
-			hud.show_victory()
+			var is_last = (current_level_index == LEVELS.size() - 1)
+			hud.show_victory(is_last)
 		elif model.game_over:
 			play_sfx(STREAM_FAILURE)
 			hud.show_breach()
