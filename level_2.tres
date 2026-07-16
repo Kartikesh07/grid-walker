@@ -4,13 +4,13 @@
 
 [resource]
 script = ExtResource("1_kngh3")
-width = 7
-height = 7
-max_cycles = 18
-admin_start_pos = Vector2i(0, 6)
-zombie_start_positions = [Vector2i(6, 6), Vector2i(3, 3), Vector2i(0, 0)]
-wall_positions = [Vector2i(3, 1), Vector2i(3, 2), Vector2i(3, 4), Vector2i(3, 5), Vector2i(1, 3), Vector2i(5, 3)]
-gc_tile_positions = [Vector2i(3, 0), Vector2i(3, 6), Vector2i(0, 3), Vector2i(6, 3)]
-emp_start_positions = [Vector2i(0, 5), Vector2i(6, 1)]
-exit_position = Vector2i(6, 0)
+width = 6
+height = 6
+max_cycles = 25
+admin_start_pos = Vector2i(0, 5)
+zombie_start_positions = [Vector2i(5, 4), Vector2i(2, 2)]
+wall_positions = [Vector2i(2, 1), Vector2i(3, 1), Vector2i(4, 1), Vector2i(2, 4), Vector2i(3, 4)]
+gc_tile_positions = [Vector2i(0, 1), Vector2i(5, 3)]
+emp_start_positions = [Vector2i(0, 2), Vector2i(5, 5)]
+exit_position = Vector2i(5, 0)
 metadata/_custom_type_script = "uid://c12jlfixkd3jy"

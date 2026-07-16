@@ -6,7 +6,7 @@
 script = ExtResource("1_kngh3")
 width = 8
 height = 8
-max_cycles = 22
+max_cycles = 35
 admin_start_pos = Vector2i(0, 7)
 zombie_start_positions = [Vector2i(7, 7), Vector2i(4, 4), Vector2i(3, 2), Vector2i(1, 1)]
 wall_positions = [Vector2i(1, 6), Vector2i(2, 6), Vector2i(3, 6), Vector2i(5, 1), Vector2i(6, 1), Vector2i(2, 2), Vector2i(2, 3), Vector2i(5, 4), Vector2i(5, 5)]
